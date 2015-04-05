@@ -111,7 +111,7 @@ namespace SharpTox.Test
         [TestMethod]
         public void TestToxEncryption()
         {
-            var key = new ToxEncryptionKey("heythisisatest");
+            var key = new ToxEncryptionKey("heythisisatest", false);
             byte[] garbage = new byte[0xBEEF];
             new Random().NextBytes(garbage);
 
@@ -132,7 +132,7 @@ namespace SharpTox.Test
             tox1.Name = "Test";
             tox1.StatusMessage = "Hey";
 
-            var key = new ToxEncryptionKey("heythisisatest");
+            var key = new ToxEncryptionKey("heythisisatest", false);
             var data = tox1.GetData(key);
 
             Assert.IsNotNull(data, "Failed to encrypt the Tox data");

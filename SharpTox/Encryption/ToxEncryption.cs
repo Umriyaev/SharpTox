@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 
 namespace SharpTox.Encryption
@@ -15,11 +16,21 @@ namespace SharpTox.Encryption
         public static byte[] EncryptData(byte[] data, ToxEncryptionKey key, out ToxErrorEncryption error)
         {
             byte[] output = new byte[data.Length + EncryptionExtraLength];
-            var pass = key.ToPassKey();
             error = ToxErrorEncryption.Ok;
 
-            if (!ToxEncryptionFunctions.PassKeyEncrypt(data, (uint)data.Length, ref pass, output, ref error) || error != ToxErrorEncryption.Ok)
-                return null;
+            bool success = key.Unprotect();
+            var pass = key.ToPassKey();
+
+            try
+            {
+                if (!ToxEncryptionFunctions.PassKeyEncrypt(data, (uint)data.Length, ref pass, output, ref error) || error != ToxErrorEncryption.Ok)
+                    return null;
+            }
+            finally
+            {
+                if (success)
+                    key.Protect();
+            }
 
             return output;
         }
@@ -33,11 +44,21 @@ namespace SharpTox.Encryption
         public static byte[] DecryptData(byte[] data, ToxEncryptionKey key, out ToxErrorDecryption error)
         {
             byte[] output = new byte[data.Length - EncryptionExtraLength];
-            var pass = key.ToPassKey();
             error = ToxErrorDecryption.Ok;
 
-            if (!ToxEncryptionFunctions.PassKeyDecrypt(data, (uint)data.Length, ref pass, output, ref error) || error != ToxErrorDecryption.Ok)
-                return null;
+            bool success = key.Unprotect();
+            var pass = key.ToPassKey();
+
+            try
+            {
+                if (!ToxEncryptionFunctions.PassKeyDecrypt(data, (uint)data.Length, ref pass, output, ref error) || error != ToxErrorDecryption.Ok)
+                    return null;
+            }
+            finally
+            {
+                if (success)
+                    key.Protect();
+            }
 
             return output;
         }
@@ -75,6 +96,27 @@ namespace SharpTox.Encryption
             return key;
         }
 
+#if !IS_PORTABLE
+        internal static ToxPassKey? DeriveKey(SecureString passphrase)
+        {
+            var ptr = Marshal.SecureStringToGlobalAllocAnsi(passphrase);
+            var error = ToxErrorKeyDerivation.Ok;
+            var key = new ToxPassKey();
+
+            try
+            {
+                if (!ToxEncryptionFunctions.DeriveKeyFromPass(ptr, (uint)passphrase.Length, ref key, ref error) || error != ToxErrorKeyDerivation.Ok)
+                    return null;
+            }
+            finally
+            {
+                Marshal.ZeroFreeGlobalAllocAnsi(ptr);
+            }
+
+            return key;
+        }
+#endif
+
         internal static ToxPassKey? DeriveKey(string passphrase, byte[] salt)
         {
             if (salt.Length < SaltLength)
@@ -89,5 +131,29 @@ namespace SharpTox.Encryption
 
             return key;
         }
+
+#if !IS_PORTABLE
+        internal static ToxPassKey? DeriveKey(SecureString passphrase, byte[] salt)
+        {
+            if (salt.Length < SaltLength)
+                return null;
+
+            var ptr = Marshal.SecureStringToGlobalAllocAnsi(passphrase);
+            var error = ToxErrorKeyDerivation.Ok;
+            var key = new ToxPassKey();
+
+            try
+            {
+                if (!ToxEncryptionFunctions.DeriveKeyWithSalt(ptr, (uint)passphrase.Length, salt, ref key, ref error) || error != ToxErrorKeyDerivation.Ok)
+                    return null;
+            }
+            finally
+            {
+                Marshal.ZeroFreeGlobalAllocAnsi(ptr);
+            }
+
+            return key;
+        }
+#endif
     }
 }

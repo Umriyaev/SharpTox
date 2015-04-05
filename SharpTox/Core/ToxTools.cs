@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Text;
 
+#if !IS_PORTABLE
+using System.Security.Cryptography;
+#endif
+
 namespace SharpTox.Core
 {
     public static class ToxTools
@@ -50,5 +54,34 @@ namespace SharpTox.Core
 
             return s;
         }
+
+#if !IS_PORTABLE
+        internal static byte[] ProtectBytes(byte[] bytesToProtect)
+        {
+            int diff = bytesToProtect.Length % 16;
+            if (diff == 0)
+            {
+                ProtectedMemory.Protect(bytesToProtect, MemoryProtectionScope.SameProcess);
+                return bytesToProtect;
+            }
+            else
+            {
+                byte[] newBytes = new byte[bytesToProtect.Length + diff];
+                Array.Copy(bytesToProtect, 0, newBytes, 0, bytesToProtect.Length);
+
+                for (int i = 0; i < bytesToProtect.Length; i++)
+                    bytesToProtect[i] = 0;
+
+                ProtectedMemory.Protect(newBytes, MemoryProtectionScope.SameProcess);
+                return newBytes;
+            }
+        }
+
+        internal static byte[] UnprotectBytes(byte[] protectedBytes)
+        {
+            ProtectedMemory.Unprotect(protectedBytes, MemoryProtectionScope.SameProcess);
+            return protectedBytes;
+        }
+#endif
     }
 }

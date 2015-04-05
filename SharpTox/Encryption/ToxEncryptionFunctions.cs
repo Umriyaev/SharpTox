@@ -14,8 +14,14 @@ namespace SharpTox.Encryption
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "tox_derive_key_from_pass")]
         internal static extern bool DeriveKeyFromPass(byte[] passphrase, uint passphraseLength, ref ToxPassKey outputKey, ref ToxErrorKeyDerivation error);
 
+        [DllImport(dll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "tox_derive_key_from_pass")]
+        internal static extern bool DeriveKeyFromPass(IntPtr passphrase, uint passphraseLength, ref ToxPassKey outputKey, ref ToxErrorKeyDerivation error);
+
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "tox_derive_key_with_salt")]
         internal static extern bool DeriveKeyWithSalt(byte[] passphrase, uint passphraseLength, byte[] salt, ref ToxPassKey outputKey, ref ToxErrorKeyDerivation error);
+
+        [DllImport(dll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "tox_derive_key_with_salt")]
+        internal static extern bool DeriveKeyWithSalt(IntPtr passphrase, uint passphraseLength, byte[] salt, ref ToxPassKey outputKey, ref ToxErrorKeyDerivation error);
 
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "tox_get_salt")]
         internal static extern bool GetSalt(byte[] data, byte[] salt);
